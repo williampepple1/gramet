@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Grammar Pro",
+  "name": "Gramet",
   "version": "1.0.0",
   "description": "AI-powered grammar correction and paraphrasing using DeepSeek",
   "permissions": ["storage", "activeTab", "contextMenus", "scripting"],

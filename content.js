@@ -32,7 +32,7 @@ function createTooltip() {
   tooltip.id = "grammar-pro-tooltip";
   tooltip.innerHTML = `
     <div id="gp-tooltip-header">
-      <span id="gp-tooltip-title">Grammar Pro</span>
+      <span id="gp-tooltip-title">Gramet</span>
       <button id="gp-tooltip-close">&times;</button>
     </div>
     <div id="gp-tooltip-content"></div>
