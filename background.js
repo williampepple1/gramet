@@ -75,6 +75,11 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab?.id) return;
+  chrome.tabs.sendMessage(tab.id, { action: "togglePanel" }).catch(() => {});
+});
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab?.id) return;
   chrome.tabs.sendMessage(tab.id, {
@@ -94,6 +99,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === "paraphrase") {
     const systemPrompt = `You are a professional paraphrasing assistant. Rewrite the given text to improve clarity, flow, and word choice while preserving the original meaning. Make it sound more natural and professional. Return ONLY the paraphrased text without any explanations, markdown, or formatting.`;
+    callDeepSeek(systemPrompt, request.text)
+      .then(result => sendResponse({ success: true, result }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (request.action === "checkTyping") {
+    const systemPrompt = `You are an English grammar and spelling corrector. If the text has NO errors, reply with the exact word "CLEAN". If there are errors, return ONLY the fully corrected version of the text without any explanations, markdown, or formatting.`;
     callDeepSeek(systemPrompt, request.text)
       .then(result => sendResponse({ success: true, result }))
       .catch(error => sendResponse({ success: false, error: error.message }));

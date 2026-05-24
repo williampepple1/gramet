@@ -171,3 +171,138 @@
   color: #d32f2f;
   font-size: 13px;
 }
+
+#gramet-panel {
+  position: fixed;
+  width: 320px;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  z-index: 2147483646;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #333;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+#gramet-panel.visible {
+  display: flex;
+}
+
+#gramet-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #4a6cf7, #6a3de8);
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+}
+
+#gramet-panel-header:active {
+  cursor: grabbing;
+}
+
+#gramet-panel-title {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+#gramet-panel-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+#gramet-panel-header-actions button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.1s;
+}
+
+#gramet-panel-header-actions button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+#gramet-panel-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+}
+
+#gramet-panel-status {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+}
+
+#gramet-panel-suggestion {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: #f8f9ff;
+  border: 1px solid #e0e0f0;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+  display: none;
+}
+
+#gramet-panel-suggestion.show {
+  display: block;
+}
+
+#gramet-panel-actions {
+  display: none;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+#gramet-panel-actions.show {
+  display: flex;
+}
+
+#gramet-panel-actions button {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+#gramet-panel-replace {
+  background: #4a6cf7;
+  color: #fff;
+}
+
+#gramet-panel-replace:hover {
+  background: #3b5de7;
+}
+
+#gramet-panel-dismiss {
+  background: #f0f0f0;
+  color: #555;
+}
+
+#gramet-panel-dismiss:hover {
+  background: #e0e0e0;
+}
