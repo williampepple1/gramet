@@ -1,8 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const { apiKey } = await chrome.storage.sync.get("apiKey");
+  const { apiKey } = await chrome.storage.local.get("apiKey");
   const badge = document.getElementById("configBadge");
   const statusDot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
+  const correctBtn = document.getElementById("correctBtn");
+  const paraphraseBtn = document.getElementById("paraphraseBtn");
 
   if (!apiKey) {
     badge.style.display = "block";
@@ -19,42 +21,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     chrome.runtime.openOptionsPage();
   });
 
-  async function sendToActiveTab(action) {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) return;
-    chrome.tabs.sendMessage(tab.id, { action });
+  function showToast(text, isError) {
+    const existing = document.querySelector(".gp-toast");
+    if (existing) existing.remove();
+    const toast = document.createElement("div");
+    toast.className = "gp-toast";
+    toast.style.cssText = "position:fixed;bottom:12px;left:12px;right:12px;padding:8px 12px;border-radius:6px;font-size:12px;text-align:center;z-index:9999;" +
+      (isError ? "background:#fbe9e7;color:#c62828;" : "background:#e8f5e9;color:#2e7d32;");
+    toast.textContent = text;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
   }
 
-  document.getElementById("correctBtn").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          const sel = window.getSelection().toString().trim();
-          return sel;
-        }
-      }).then(([result]) => {
-        if (result.result) {
-          chrome.tabs.sendMessage(tab.id, { action: "correctGrammar", text: result.result });
-        } else {
-          alert("Select text on the page first.");
-        }
-      });
-    });
-  });
-
-  document.getElementById("paraphraseBtn").addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-      chrome.scripting.executeScript({
+  async function handlePopupAction(action, btn) {
+    btn.disabled = true;
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return;
+      const [result] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => window.getSelection().toString().trim()
-      }).then(([result]) => {
-        if (result.result) {
-          chrome.tabs.sendMessage(tab.id, { action: "paraphrase", text: result.result });
-        } else {
-          alert("Select text on the page first.");
-        }
       });
-    });
-  });
+      if (result?.result) {
+        try {
+          await chrome.tabs.sendMessage(tab.id, { action, text: result.result });
+        } catch (sendErr) {
+          showToast("Couldn't reach the page. Try reloading it.", true);
+        }
+      } else {
+        showToast("Select some text on the page first.", true);
+      }
+    } catch (err) {
+      showToast("This page doesn't support text selection via the extension.", true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  correctBtn.addEventListener("click", () => handlePopupAction("correctGrammar", correctBtn));
+  paraphraseBtn.addEventListener("click", () => handlePopupAction("paraphrase", paraphraseBtn));
 });

@@ -2,6 +2,11 @@ let toolbar = null;
 let tooltip = null;
 let selectedText = "";
 let isProcessing = false;
+let mouseupTimer = null;
+
+function getEl(id) {
+  return tooltip ? tooltip.querySelector(`#${id}`) : null;
+}
 
 function createToolbar() {
   toolbar = document.createElement("div");
@@ -18,8 +23,8 @@ function createToolbar() {
   `;
   document.body.appendChild(toolbar);
 
-  document.getElementById("gp-correct").addEventListener("click", () => handleAction("correctGrammar"));
-  document.getElementById("gp-paraphrase").addEventListener("click", () => handleAction("paraphrase"));
+  toolbar.querySelector("#gp-correct").addEventListener("click", () => handleAction("correctGrammar"));
+  toolbar.querySelector("#gp-paraphrase").addEventListener("click", () => handleAction("paraphrase"));
 }
 
 function createTooltip() {
@@ -38,9 +43,9 @@ function createTooltip() {
   `;
   document.body.appendChild(tooltip);
 
-  document.getElementById("gp-tooltip-close").addEventListener("click", hideTooltip);
-  document.getElementById("gp-apply").addEventListener("click", applyToText);
-  document.getElementById("gp-copy").addEventListener("click", copyResult);
+  tooltip.querySelector("#gp-tooltip-close").addEventListener("click", hideTooltip);
+  tooltip.querySelector("#gp-apply").addEventListener("click", applyToText);
+  tooltip.querySelector("#gp-copy").addEventListener("click", copyResult);
 }
 
 function showToolbar(x, y) {
@@ -60,47 +65,58 @@ function showTooltip() {
   if (!selection.rangeCount) return;
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
-  const scrollX = window.scrollX || window.pageXOffset;
-  const scrollY = window.scrollY || window.pageYOffset;
 
-  const top = rect.bottom + scrollY + 8;
-  const left = rect.left + scrollX;
+  const top = rect.bottom + 8;
+  const left = rect.left;
 
-  tooltip.style.left = `${Math.max(10, Math.min(left, window.innerWidth + scrollX - 360))}px`;
-  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${Math.max(10, Math.min(left, window.innerWidth - 360))}px`;
+  tooltip.style.top = `${Math.min(top, window.innerHeight - 280)}px`;
   tooltip.classList.add("visible");
 }
 
 function hideTooltip() {
   if (tooltip) {
     tooltip.classList.remove("visible");
-    document.getElementById("gp-tooltip-content").textContent = "";
+    const content = getEl("gp-tooltip-content");
+    if (content) content.textContent = "";
   }
 }
 
 function showLoading() {
-  const content = document.getElementById("gp-tooltip-content");
-  content.innerHTML = '<div class="gp-loading"><div class="gp-spinner"></div> Processing...</div>';
+  const content = getEl("gp-tooltip-content");
+  if (content) content.innerHTML = '<div class="gp-loading"><div class="gp-spinner"></div> Processing...</div>';
 }
 
 function showResult(text) {
-  const content = document.getElementById("gp-tooltip-content");
-  content.textContent = text;
+  const content = getEl("gp-tooltip-content");
+  if (content) content.textContent = text;
 }
 
 function showError(msg) {
-  const content = document.getElementById("gp-tooltip-content");
-  content.innerHTML = `<div class="gp-error">${msg}</div>`;
+  const content = getEl("gp-tooltip-content");
+  if (content) {
+    const div = document.createElement("div");
+    div.className = "gp-error";
+    div.textContent = msg;
+    content.replaceChildren(div);
+  }
 }
 
 async function handleAction(action) {
   if (isProcessing) return;
+  if (selectedText.length > 8000) {
+    showError("Selected text is too long. Please select a shorter portion.");
+    return;
+  }
   isProcessing = true;
   hideToolbar();
   showTooltip();
   showLoading();
-  document.getElementById("gp-tooltip-title").textContent =
-    action === "correctGrammar" ? "Corrected Text" : "Paraphrased Text";
+  const titleEl = getEl("gp-tooltip-title");
+  if (titleEl) {
+    titleEl.textContent =
+      action === "correctGrammar" ? "Corrected Text" : "Paraphrased Text";
+  }
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -121,7 +137,8 @@ async function handleAction(action) {
 }
 
 function applyToText() {
-  const result = document.getElementById("gp-tooltip-content").textContent;
+  const contentEl = getEl("gp-tooltip-content");
+  const result = contentEl ? contentEl.textContent : "";
   if (!result) return;
 
   const activeEl = document.activeElement;
@@ -129,8 +146,12 @@ function applyToText() {
       activeEl.isContentEditable)) {
     if (activeEl.isContentEditable) {
       activeEl.focus();
-      document.execCommand("selectAll", false, null);
-      document.execCommand("insertText", false, result);
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(result));
+      }
     } else {
       const start = activeEl.selectionStart;
       const end = activeEl.selectionEnd;
@@ -153,11 +174,14 @@ function replaceSelectionText(replacement) {
 }
 
 function copyResult() {
-  const text = document.getElementById("gp-tooltip-content").textContent;
+  const contentEl = getEl("gp-tooltip-content");
+  const text = contentEl ? contentEl.textContent : "";
   if (text) {
     navigator.clipboard.writeText(text).catch(() => {
       const textarea = document.createElement("textarea");
       textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
@@ -167,20 +191,23 @@ function copyResult() {
 }
 
 document.addEventListener("mouseup", (e) => {
-  setTimeout(() => {
+  if (mouseupTimer) clearTimeout(mouseupTimer);
+  mouseupTimer = setTimeout(() => {
+    if (isProcessing) return;
     const selection = window.getSelection();
     const text = selection.toString().trim();
 
     if (text.length > 1) {
       selectedText = text;
-      const rect = selection.getRangeAt(0).getBoundingClientRect();
-      const scrollX = window.scrollX || window.pageXOffset;
-      const scrollY = window.scrollY || window.pageYOffset;
-      showToolbar(rect.left + scrollX, rect.top + scrollY);
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const x = Math.max(5, Math.min(rect.left, window.innerWidth - 180));
+      const y = Math.max(5, rect.top - 40);
+      showToolbar(x, y);
     } else {
       hideToolbar();
     }
-  }, 10);
+  }, 150);
 });
 
 document.addEventListener("mousedown", (e) => {
@@ -195,3 +222,13 @@ chrome.runtime.onMessage.addListener((request) => {
     handleAction(request.action);
   }
 });
+
+const removalObserver = new MutationObserver(() => {
+  if (toolbar && !document.body.contains(toolbar)) {
+    toolbar = null;
+  }
+  if (tooltip && !document.body.contains(tooltip)) {
+    tooltip = null;
+  }
+});
+removalObserver.observe(document.body, { childList: true });

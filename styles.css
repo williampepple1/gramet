@@ -1,5 +1,5 @@
 #grammar-pro-toolbar {
-  position: absolute;
+  position: fixed;
   display: flex;
   gap: 4px;
   padding: 4px 6px;
@@ -44,7 +44,7 @@
 }
 
 #grammar-pro-tooltip {
-  position: absolute;
+  position: fixed;
   width: 340px;
   max-height: 260px;
   background: #ffffff;

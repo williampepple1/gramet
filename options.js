@@ -19,7 +19,7 @@ function showTestResult(text, type) {
   testResult.style.display = "block";
 }
 
-chrome.storage.sync.get("apiKey", (data) => {
+chrome.storage.local.get("apiKey", (data) => {
   if (data.apiKey) {
     apiKeyInput.value = data.apiKey;
   }
@@ -35,13 +35,13 @@ saveBtn.addEventListener("click", () => {
     showMsg("Invalid key format. DeepSeek keys start with 'sk-'.", "error");
     return;
   }
-  chrome.storage.sync.set({ apiKey: key }, () => {
+  chrome.storage.local.set({ apiKey: key }, () => {
     showMsg("API key saved successfully!", "success");
   });
 });
 
 clearBtn.addEventListener("click", () => {
-  chrome.storage.sync.remove("apiKey", () => {
+  chrome.storage.local.remove("apiKey", () => {
     apiKeyInput.value = "";
     showMsg("API key cleared.", "success");
   });
@@ -54,12 +54,14 @@ testBtn.addEventListener("click", async () => {
     showTestResult("Save an API key first.", "error");
     return;
   }
-  showTestResult("Testing...", "");
-  testResult.className = "msg";
+  showTestResult("", "");
   testResult.innerHTML = '<span style="color:#888">⏳ Connecting...</span>';
   testResult.style.display = "block";
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const res = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
@@ -74,17 +76,28 @@ testBtn.addEventListener("click", async () => {
         ],
         temperature: 0,
         max_tokens: 256
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
-      const err = await res.text();
-      showTestResult(`Error (${res.status}): ${err.slice(0, 200)}`, "error");
+      showTestResult(`Error (${res.status}). Please check your API key and try again.`, "error");
       return;
     }
     const data = await res.json();
-    const corrected = data.choices[0].message.content;
+    const corrected = data?.choices?.[0]?.message?.content;
+    if (!corrected) {
+      showTestResult("Unexpected API response format.", "error");
+      return;
+    }
     showTestResult(`✅ Original: "${text}"\n✅ Corrected: "${corrected}"`, "success");
   } catch (err) {
-    showTestResult(`Connection failed: ${err.message}`, "error");
+    if (err.name === "AbortError") {
+      showTestResult("Request timed out. Please try again.", "error");
+    } else {
+      showTestResult(`Connection failed: ${err.message}`, "error");
+    }
   }
 });
