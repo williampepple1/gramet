@@ -75,9 +75,25 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.action.onClicked.addListener((tab) => {
+chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
-  chrome.tabs.sendMessage(tab.id, { action: "togglePanel" }).catch(() => {});
+  try {
+    await chrome.tabs.sendMessage(tab.id, { action: "togglePanel" });
+  } catch {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content.js"]
+      });
+      await chrome.scripting.insertCSS({
+        target: { tabId: tab.id },
+        files: ["styles.css"]
+      });
+      chrome.tabs.sendMessage(tab.id, { action: "togglePanel" }).catch(() => {});
+    } catch {
+      // Page doesn't support injection (chrome://, etc.) — do nothing
+    }
+  }
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
