@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grammar Pro - Settings</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f7fb;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 480px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h1 svg { width: 24px; height: 24px; }
+    .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #555;
+    }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border 0.15s;
+    }
+    input[type="password"]:focus, input[type="text"]:focus {
+      border-color: #4a6cf7;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-primary {
+      background: #4a6cf7;
+      color: #fff;
+    }
+    .btn-primary:hover { background: #3b5de7; }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #555;
+    }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .actions { display: flex; gap: 8px; margin-top: 14px; }
+    .msg {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .msg.success { background: #e8f5e9; color: #2e7d32; }
+    .msg.error { background: #fbe9e7; color: #c62828; }
+    .info {
+      font-size: 12px;
+      color: #888;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    .info a { color: #4a6cf7; }
+    .test-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .test-row input { flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Grammar Pro
+    </h1>
+    <p class="subtitle">Configure your DeepSeek API key</p>
+
+    <div class="card">
+      <h2>API Key</h2>
+      <label for="apiKey">DeepSeek API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+      <p class="info">
+        Get your API key from <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a>.
+        Your key is stored locally and never sent anywhere except DeepSeek.
+      </p>
+      <div class="actions">
+        <button class="btn btn-primary" id="saveBtn">Save</button>
+        <button class="btn btn-secondary" id="clearBtn">Clear</button>
+      </div>
+      <div id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Test Connection</h2>
+      <p style="font-size:13px;color:#666;margin-bottom:8px;">Send a quick test to verify your API key works.</p>
+      <div class="test-row">
+        <input type="text" id="testInput" value="She dont like coffee.">
+        <button class="btn btn-primary" id="testBtn">Test</button>
+      </div>
+      <div id="testResult"></div>
+    </div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>
