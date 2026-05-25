@@ -293,12 +293,14 @@ function onPanelDragEnd() {
 
 function startMonitoring() {
   document.addEventListener("focusin", onFocusIn, true);
+  document.addEventListener("focusout", onFocusOut, true);
   document.addEventListener("input", onInput, true);
   setPanelStatus("Click a text field and start typing...");
 }
 
 function stopMonitoring() {
   document.removeEventListener("focusin", onFocusIn, true);
+  document.removeEventListener("focusout", onFocusOut, true);
   document.removeEventListener("input", onInput, true);
   if (typeTimer) clearTimeout(typeTimer);
   monitoredElement = null;
@@ -318,15 +320,39 @@ function onFocusIn(e) {
   }
 }
 
+function onFocusOut(e) {
+  if (!panelVisible || !monitoredElement) return;
+  if (e.target !== monitoredElement) return;
+  if (typeTimer) clearTimeout(typeTimer);
+  const text = (monitoredElement.value || monitoredElement.textContent || "").trim();
+  if (text.length >= 10 && !panelBusy) {
+    checkTyping(text);
+  }
+}
+
 function onInput(e) {
   if (!panelVisible || !monitoredElement) return;
   if (e.target !== monitoredElement) return;
   if (typeTimer) clearTimeout(typeTimer);
+
+  const text = (monitoredElement.value || monitoredElement.textContent || "").trim();
+  const lastChar = text.slice(-1);
+
+  if (text.length >= 10 && (lastChar === "." || lastChar === "?" || lastChar === "!")) {
+    typeTimer = setTimeout(() => {
+      if (text.length >= 10) checkTyping(text);
+    }, 300);
+    return;
+  }
+
+  if (text.length >= 10) {
+    setPanelStatus("Typing...");
+  }
+
   typeTimer = setTimeout(() => {
-    const text = (monitoredElement.value || monitoredElement.textContent || "").trim();
-    if (text.length < 30) return;
-    checkTyping(text);
-  }, 800);
+    const current = (monitoredElement.value || monitoredElement.textContent || "").trim();
+    if (current.length >= 10) checkTyping(current);
+  }, 600);
 }
 
 async function checkTyping(text) {
@@ -336,8 +362,8 @@ async function checkTyping(text) {
   }
   panelBusy = true;
   pendingText = null;
+  setPanelStatus("Checking...");
   showPanelSpinner(true);
-  setPanelStatus("");
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -347,7 +373,8 @@ async function checkTyping(text) {
 
     if (response.success) {
       const corrected = response.result.trim();
-      if (corrected === "CLEAN" || corrected === text) {
+      const cleanResponses = ["CLEAN", "CLEAN.", "NO ERRORS", "NO ERRORS.", "CORRECT", "CORRECT."];
+      if (cleanResponses.includes(corrected.toUpperCase()) || corrected === text) {
         setPanelStatus("No errors found");
         hidePanelSuggestion();
       } else {
@@ -375,6 +402,7 @@ function showPanelSuggestion(text) {
   const actions = getPanelEl("gramet-panel-actions");
   if (el) { el.textContent = text; el.classList.add("show"); }
   if (actions) actions.classList.add("show");
+  if (panel) panel.classList.add("has-suggestion");
 }
 
 function hidePanelSuggestion() {
@@ -382,6 +410,7 @@ function hidePanelSuggestion() {
   const actions = getPanelEl("gramet-panel-actions");
   if (el) { el.textContent = ""; el.classList.remove("show"); }
   if (actions) actions.classList.remove("show");
+  if (panel) panel.classList.remove("has-suggestion");
 }
 
 function setPanelStatus(text) {

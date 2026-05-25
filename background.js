@@ -122,7 +122,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "checkTyping") {
-    const systemPrompt = `You are an English grammar and spelling corrector. If the text has NO errors, reply with the exact word "CLEAN". If there are errors, return ONLY the fully corrected version of the text without any explanations, markdown, or formatting.`;
+    const systemPrompt = `You are an English grammar and spelling corrector. If the text has NO grammar, spelling, or punctuation errors, reply with ONLY the word CLEAN. If there ARE errors, return ONLY the fully corrected text. Never add explanations, markdown, or formatting.`;
     callDeepSeek(systemPrompt, request.text)
       .then(result => sendResponse({ success: true, result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
